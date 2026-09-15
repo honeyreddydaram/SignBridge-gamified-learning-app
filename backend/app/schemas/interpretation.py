@@ -10,6 +10,7 @@ class SignVideo(BaseModel):
     video_id: str
     watch_url: str
     embed_url: str
+    loop_embed_url: str  # embed_url + autoplay/mute/loop/no-chrome params for clean communication playback
     source_title: str
     source_channel: str
 
@@ -17,8 +18,7 @@ class SignVideo(BaseModel):
 class InterpretSegment(BaseModel):
     kind: str  # "sign" | "fingerspell" | "space"
     word: str
-    description: str | None = None  # populated for kind == "sign"
-    video: SignVideo | None = None  # populated for kind == "sign" (real, verified video)
+    video: SignVideo | None = None  # populated for kind == "sign" (real, verified, single-sign video)
     letters: list[str] | None = None  # populated for kind == "fingerspell"
 
 

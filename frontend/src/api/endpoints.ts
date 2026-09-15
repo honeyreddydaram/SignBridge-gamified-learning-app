@@ -47,5 +47,7 @@ export const recognitionApi = {
 export const interpretationApi = {
   interpret: (text: string) => apiClient.post<InterpretResponse>('/interpretation/interpret', { text }),
   supportedSigns: () =>
-    apiClient.get<{ count: number; words: SupportedSignEntry[] }>('/interpretation/supported-signs'),
+    apiClient.get<{ count: number; total_vocabulary_count: number; words: SupportedSignEntry[] }>(
+      '/interpretation/supported-signs',
+    ),
 }

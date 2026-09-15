@@ -4,9 +4,10 @@ import { lessonsApi } from '../api/endpoints'
 import { CameraChallenge } from '../components/CameraChallenge'
 import { SignCard } from '../components/SignCard'
 import { HandSkeleton } from '../components/HandSkeleton'
+import { VocabMirrorPractice } from '../components/VocabMirrorPractice'
 import { useReferenceSigns } from '../hooks/useReferenceSigns'
 import { useAuth } from '../store/AuthContext'
-import type { Exercise, LessonCompletionResult } from '../types'
+import type { Exercise, LessonCompletionResult, SignVideo } from '../types'
 
 type Phase = 'loading' | 'active' | 'summary' | 'error'
 
@@ -35,7 +36,7 @@ export function LessonDetail() {
   }, [id])
 
   function isGraded(ex: Exercise) {
-    return ex.type !== 'learn_card'
+    return ex.type !== 'learn_card' && ex.type !== 'vocab_video_card' && ex.type !== 'vocab_mirror_practice'
   }
 
   async function handleAnswer(correct: boolean) {
@@ -182,9 +183,73 @@ function ExerciseView({
     )
   }
 
+  if (exercise.type === 'vocab_video_card') {
+    return (
+      <div className="flex flex-col items-center gap-4 text-center">
+        <h2 className="text-xl font-bold text-brand-800">{exercise.word}</h2>
+        <ReplayableVideo video={exercise.video} className="aspect-video w-full max-w-sm" />
+        <p className="max-w-sm text-gray-600">{exercise.description}</p>
+        <p className="text-xs text-gray-400">
+          Source:{' '}
+          <a href={exercise.video.watch_url} target="_blank" rel="noreferrer" className="underline hover:text-gray-600">
+            {exercise.source_channel}
+          </a>
+        </p>
+        <button
+          onClick={() => onAnswer(true)}
+          className="rounded-lg bg-brand-600 px-6 py-2 font-medium text-white hover:bg-brand-700"
+        >
+          Got it
+        </button>
+      </div>
+    )
+  }
+
+  if (exercise.type === 'vocab_comprehension_mcq') {
+    return (
+      <MCQ
+        prompt={exercise.prompt}
+        top={<ReplayableVideo video={exercise.video} className="aspect-video w-64" />}
+        options={exercise.options}
+        correctOption={exercise.correct_option}
+        renderOption={(opt) => <span className="font-semibold">{opt}</span>}
+        onAnswer={onAnswer}
+      />
+    )
+  }
+
+  if (exercise.type === 'vocab_mirror_practice') {
+    return <VocabMirrorPractice words={exercise.words} onDone={() => onAnswer(true)} />
+  }
+
   // camera_challenge
   return (
     <CameraChallenge targetLetter={exercise.target_letter} lessonId={lessonId} onResult={onAnswer} />
+  )
+}
+
+function ReplayableVideo({ video, className }: { video: SignVideo; className?: string }) {
+  const [playKey, setPlayKey] = useState(0)
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className={`overflow-hidden rounded-xl bg-black ${className ?? ''}`}>
+        <iframe
+          key={playKey}
+          src={`${video.embed_url}?autoplay=1&rel=0`}
+          title={video.source_title}
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      <button
+        onClick={() => setPlayKey((k) => k + 1)}
+        className="rounded-lg border border-brand-200 px-3 py-1 text-xs text-brand-700 hover:bg-brand-50"
+      >
+        ↻ Replay
+      </button>
+    </div>
   )
 }
 

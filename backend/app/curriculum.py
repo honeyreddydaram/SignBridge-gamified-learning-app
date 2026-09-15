@@ -13,6 +13,8 @@ its images.
 
 from __future__ import annotations
 
+from app.asl_signs import SUPPORTED_SIGNS
+
 LETTERS = [chr(ord("A") + i) for i in range(26)]
 
 LETTER_DESCRIPTIONS: dict[str, str] = {
@@ -88,3 +90,170 @@ def generate_lesson_exercises(letter: str, all_letters: list[str]) -> list[dict]
             "target_letter": letter,
         },
     ]
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary track: thematic lessons built from the verified 114-word sign
+# manifest (ml/word_signs_verified.json, loaded via app.asl_signs). Every
+# word below MUST exist in SUPPORTED_SIGNS — see the assertion in
+# get_vocabulary_categories(), which fails loudly at import time rather than
+# silently dropping a mistyped word.
+#
+# NOTE ON CAMERA CHALLENGES: unlike the alphabet track, vocabulary lessons do
+# NOT include a recognition-model-graded camera challenge. The trained
+# recognition model (ml/models/asl_landmark_classifier.joblib) only
+# classifies static A-Z fingerspelling handshapes from a single frame — it
+# was never trained on, and cannot validate, dynamic multi-frame word-level
+# signs like HELLO or THANK YOU. Claiming to auto-grade those would be
+# exactly the kind of fabricated-working-feature this project explicitly
+# rules out. Instead each vocabulary lesson ends with an ungraded
+# "vocab_mirror_practice" step: the learner's own camera feed alongside a
+# reminder of the words just covered, for self-directed practice — no
+# recognition claim, no fake grading.
+# ---------------------------------------------------------------------------
+
+VOCABULARY_CATEGORIES: list[dict] = [
+    {
+        "key": "greetings_courtesy",
+        "title": "Greetings & Courtesy",
+        "description": "The everyday words you'll use to start and end a conversation politely.",
+        "words": ["HELLO", "HI", "GOODBYE", "BYE", "PLEASE", "THANKYOU", "SORRY", "WELCOME", "YES", "NO", "MAYBE"],
+    },
+    {
+        "key": "family_people",
+        "title": "Family & People",
+        "description": "People words: family members, pronouns, and common roles.",
+        "words": [
+            "MOTHER", "FATHER", "GRANDMOTHER", "GRANDFATHER", "BROTHER", "SISTER", "FAMILY", "FRIEND",
+            "BABY", "MAN", "WOMAN", "BOY", "GIRL", "TEACHER", "STUDENT", "I", "ME", "YOU", "WE", "THEY",
+        ],
+    },
+    {
+        "key": "needs_requests",
+        "title": "Needs & Requests",
+        "description": "Say what you want, need, or are asking someone to do.",
+        "words": ["WANT", "NEED", "LIKE", "HELP", "MORE", "STOP", "FINISHED", "DONE", "GO", "COME", "WAIT", "AGAIN", "GIVE", "TAKE"],
+    },
+    {
+        "key": "feelings_emotions",
+        "title": "Feelings & Emotions",
+        "description": "Describe how you or someone else is feeling.",
+        "words": ["HAPPY", "SAD", "ANGRY", "TIRED", "HUNGRY", "THIRSTY", "SCARED", "EXCITED", "LOVE"],
+    },
+    {
+        "key": "question_words",
+        "title": "Question Words",
+        "description": "The six core question words used to ask for information.",
+        "words": ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"],
+    },
+    {
+        "key": "everyday_actions",
+        "title": "Everyday Actions",
+        "description": "Common verbs for daily activities and communication.",
+        "words": [
+            "EAT", "DRINK", "SIT", "STAND", "WALK", "RUN", "PLAY", "WORK", "SLEEP", "CLEAN",
+            "UNDERSTAND", "KNOW", "THINK", "REMEMBER", "FORGET", "SEE", "LOOK", "TALK", "SPEAK", "ASK", "NAME",
+        ],
+    },
+    {
+        "key": "descriptions_opposites",
+        "title": "Descriptions & Opposites",
+        "description": "Descriptive words, often useful in opposite pairs.",
+        "words": ["RIGHT", "WRONG", "SAME", "DIFFERENT", "OLD", "BIG", "SMALL", "HOT", "COLD", "SLOW", "OPEN", "CLOSE", "FUNNY", "BEAUTIFUL"],
+    },
+    {
+        "key": "colors",
+        "title": "Colors",
+        "description": "The ten basic colors.",
+        "words": ["RED", "BLUE", "GREEN", "YELLOW", "BLACK", "WHITE", "BROWN", "ORANGE", "PURPLE", "PINK"],
+    },
+    {
+        "key": "time_words",
+        "title": "Time Words",
+        "description": "Talk about when something happens.",
+        "words": ["TIME", "TODAY", "TOMORROW", "YESTERDAY"],
+    },
+    {
+        "key": "home_things",
+        "title": "Home & Everyday Things",
+        "description": "Common nouns for places and things around you.",
+        "words": ["HOME", "HOUSE", "FOOD", "WATER", "MONEY"],
+    },
+]
+
+
+def get_vocabulary_categories() -> list[dict]:
+    """Validates every category word actually exists in the verified manifest
+    before returning — fails loudly at call time rather than silently
+    generating a lesson with a missing sign."""
+    for cat in VOCABULARY_CATEGORIES:
+        for word in cat["words"]:
+            if word not in SUPPORTED_SIGNS:
+                raise RuntimeError(
+                    f"curriculum.py vocabulary category '{cat['key']}' references word "
+                    f"'{word}' which is not in SUPPORTED_SIGNS (ml/word_signs_verified.json). "
+                    "Fix the category list or the manifest."
+                )
+    return VOCABULARY_CATEGORIES
+
+
+def _video_dict(sign) -> dict:
+    return {
+        "provider": sign.video_provider,
+        "video_id": sign.video_id,
+        "watch_url": sign.watch_url,
+        "embed_url": sign.embed_url,
+        "source_title": sign.source_title,
+        "source_channel": sign.source_channel,
+    }
+
+
+def generate_vocabulary_exercises(category_key: str) -> list[dict]:
+    """
+    Deterministic exercise set for a vocabulary lesson:
+      1. one vocab_video_card per word (real video + description + attribution)
+      2. one vocab_comprehension_mcq per word ("what does this sign mean?")
+      3. one vocab_mirror_practice covering the whole category (ungraded
+         camera self-practice — see module docstring for why this isn't
+         recognition-graded like the alphabet track's camera_challenge)
+    """
+    import random
+
+    category = next((c for c in get_vocabulary_categories() if c["key"] == category_key), None)
+    if category is None:
+        raise ValueError(f"unknown vocabulary category: {category_key}")
+
+    words = category["words"]
+    all_words = [w for cat in VOCABULARY_CATEGORIES for w in cat["words"]]
+    rng = random.Random(f"signbridge-vocab-{category_key}")
+
+    exercises: list[dict] = []
+    for word in words:
+        sign = SUPPORTED_SIGNS[word]
+        exercises.append(
+            {
+                "type": "vocab_video_card",
+                "word": word,
+                "description": sign.description,
+                "video": _video_dict(sign),
+                "source_channel": sign.source_channel,
+            }
+        )
+
+    for word in words:
+        sign = SUPPORTED_SIGNS[word]
+        others = [w for w in all_words if w != word]
+        distractors = rng.sample(others, k=min(3, len(others)))
+        exercises.append(
+            {
+                "type": "vocab_comprehension_mcq",
+                "prompt": "What does this sign mean?",
+                "video": _video_dict(sign),
+                "options": sorted([word, *distractors], key=lambda _: rng.random()),
+                "correct_option": word,
+            }
+        )
+
+    exercises.append({"type": "vocab_mirror_practice", "words": words})
+
+    return exercises

@@ -55,6 +55,16 @@ class WordSign:
     source_channel: str
     verification_method: str = ""
     notes: str = ""
+    # True if this video_id appears under exactly one word in the whole
+    # manifest (not a compilation shared by several words, e.g. one "Colors"
+    # video backing all 10 colors). Computed at load time, not stored in the
+    # source JSON. This matters because a shared/compilation video can't be
+    # cleanly looped to show just ONE sign — looping it plays neighboring
+    # signs too. The Learning module is fine with that (full context is
+    # useful for teaching); the Interpretation module's clean-loop
+    # "communication" playback is restricted to is_dedicated_video=True
+    # words for exactly this reason — see interpretation.py.
+    is_dedicated_video: bool = False
 
 
 def _load_verified_signs() -> dict[str, WordSign]:
@@ -72,7 +82,7 @@ def _load_verified_signs() -> dict[str, WordSign]:
         logger.error("Failed to load %s: %s — treating vocabulary as empty.", VERIFIED_SIGNS_PATH, e)
         return {}
 
-    signs: dict[str, WordSign] = {}
+    valid_entries = []
     for entry in raw:
         missing = REQUIRED_FIELDS - entry.keys()
         if missing:
@@ -81,6 +91,14 @@ def _load_verified_signs() -> dict[str, WordSign]:
         word = normalize_word(entry["word"])
         if not word:
             continue
+        valid_entries.append((word, entry))
+
+    video_id_counts: dict[str, int] = {}
+    for _, entry in valid_entries:
+        video_id_counts[entry["video_id"]] = video_id_counts.get(entry["video_id"], 0) + 1
+
+    signs: dict[str, WordSign] = {}
+    for word, entry in valid_entries:
         signs[word] = WordSign(
             word=word,
             description=entry["description"],
@@ -92,6 +110,7 @@ def _load_verified_signs() -> dict[str, WordSign]:
             source_channel=entry["source_channel"],
             verification_method=entry.get("verification_method", ""),
             notes=entry.get("notes", ""),
+            is_dedicated_video=video_id_counts[entry["video_id"]] == 1,
         )
     return signs
 

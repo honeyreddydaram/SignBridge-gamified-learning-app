@@ -70,15 +70,50 @@ def client():
 
 @pytest.fixture
 def seeded_curriculum(db_session):
+    """Seeds the alphabet track only (26 letters) + achievements. Uses the
+    real asl_signs.py-backed LETTER_DESCRIPTIONS; does NOT depend on the
+    verified word-signs manifest, so it's stable regardless of vocabulary
+    data changes. Use seeded_vocabulary (below) for vocabulary-track tests."""
     from app.curriculum import LETTER_DESCRIPTIONS, LETTERS
     from app.models.gamification import Achievement
-    from app.models.lesson import Lesson
+    from app.models.lesson import Lesson, LessonType
     from app.services.gamification_service import ACHIEVEMENT_DEFS
 
     for i, letter in enumerate(LETTERS, start=1):
         db_session.add(
-            Lesson(letter=letter, order_index=i, title=f'Letter "{letter}"', description=LETTER_DESCRIPTIONS[letter])
+            Lesson(
+                lesson_type=LessonType.ALPHABET,
+                letter=letter,
+                order_index=i,
+                title=f'Letter "{letter}"',
+                description=LETTER_DESCRIPTIONS[letter],
+            )
         )
     for code, title, description, icon in ACHIEVEMENT_DEFS:
         db_session.add(Achievement(code=code, title=title, description=description, icon=icon))
+    db_session.commit()
+
+
+@pytest.fixture
+def seeded_vocabulary(db_session):
+    """Seeds the vocabulary track only (real categories from curriculum.py,
+    backed by the real verified word-signs manifest). Depends on
+    ml/word_signs_verified.json actually being present and covering every
+    word curriculum.py's categories reference (get_vocabulary_categories()
+    asserts this itself). Does NOT seed achievements — always used alongside
+    seeded_curriculum in tests, which already does that; seeding them twice
+    in the same test would violate the unique constraint on Achievement.code."""
+    from app.curriculum import get_vocabulary_categories
+    from app.models.lesson import Lesson, LessonType
+
+    for i, category in enumerate(get_vocabulary_categories(), start=1):
+        db_session.add(
+            Lesson(
+                lesson_type=LessonType.VOCABULARY,
+                concept_key=category["key"],
+                order_index=i,
+                title=category["title"],
+                description=category["description"],
+            )
+        )
     db_session.commit()

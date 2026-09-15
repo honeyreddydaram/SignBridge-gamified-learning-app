@@ -2,14 +2,16 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.lesson import LessonStatus
+from app.models.lesson import LessonStatus, LessonType
 
 
 class LessonOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    letter: str
+    lesson_type: LessonType
+    letter: str | None
+    concept_key: str | None
     order_index: int
     title: str
     description: str

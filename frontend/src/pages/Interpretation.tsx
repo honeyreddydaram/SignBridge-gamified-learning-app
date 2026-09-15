@@ -4,6 +4,17 @@ import { HandSkeleton } from '../components/HandSkeleton'
 import { useReferenceSigns } from '../hooks/useReferenceSigns'
 import type { InterpretResponse } from '../types'
 
+/**
+ * Communication tool, not a teaching interface: type English, see the
+ * supported signs play back immediately as small looping clips. No
+ * descriptions, no "how to form this sign" instructions, no prominent
+ * lesson framing — that's the Learning module's job (see LessonDetail.tsx's
+ * vocab_video_card, which uses the SAME underlying video manifest with full
+ * teaching context). Only words backed by a video dedicated to just that
+ * one sign are shown here (backend: asl_signs.is_dedicated_video) — a
+ * shared/compilation video can't be cleanly looped to show one sign alone,
+ * so those words fingerspell here even though they're Learning-eligible.
+ */
 export function Interpretation() {
   const [text, setText] = useState('')
   const [result, setResult] = useState<InterpretResponse | null>(null)
@@ -26,15 +37,15 @@ export function Interpretation() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-1 text-2xl font-bold text-brand-800">Text → ASL</h1>
       <p className="mb-6 text-sm text-gray-600">
-        Type English text to see it fingerspelled letter-by-letter, or as a real video of a supported
-        whole-word ASL sign where one exists.
+        Type English text — the recipient sees it play as ASL signs immediately. For words without a
+        clean sign clip, it fingerspells instead.
       </p>
 
       <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. hello, thank you"
+          placeholder="e.g. hello friend"
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none"
         />
         <button
@@ -42,81 +53,48 @@ export function Interpretation() {
           disabled={loading}
           className="rounded-lg bg-brand-600 px-5 py-2 font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
-          {loading ? '...' : 'Translate'}
+          {loading ? '...' : 'Play'}
         </button>
       </form>
 
       {result && (
         <>
-          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            ⚠️ {result.disclaimer}
-          </div>
+          <p className="mb-4 text-xs text-gray-400">{result.disclaimer}</p>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-wrap gap-3">
             {result.segments
               .filter((s) => s.kind !== 'space')
-              .map((seg, i) => (
-                <div key={i} className="rounded-xl border border-brand-100 bg-white p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="text-lg font-bold text-brand-800">{seg.word}</span>
-                    {seg.kind === 'sign' ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                        Supported ASL sign
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                        Fingerspelled
-                      </span>
-                    )}
-                  </div>
-
-                  {seg.kind === 'sign' && seg.video && (
-                    <div className="flex flex-col gap-2">
-                      <div className="aspect-video w-full max-w-sm overflow-hidden rounded-lg bg-black">
-                        <iframe
-                          key={seg.video.video_id}
-                          src={`${seg.video.embed_url}?rel=0`}
-                          title={seg.video.source_title}
-                          className="h-full w-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      </div>
-                      <p className="text-sm text-gray-600">{seg.description}</p>
-                      <p className="text-xs text-gray-400">
-                        Video:{' '}
-                        <a
-                          href={seg.video.watch_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline hover:text-gray-600"
-                        >
-                          {seg.video.source_title}
-                        </a>{' '}
-                        — {seg.video.source_channel} (via YouTube)
-                      </p>
+              .map((seg, i) =>
+                seg.kind === 'sign' && seg.video ? (
+                  <div key={i} className="flex w-28 flex-col items-center gap-1">
+                    <div className="aspect-square w-28 overflow-hidden rounded-xl bg-black">
+                      <iframe
+                        src={seg.video.loop_embed_url}
+                        title={seg.word}
+                        className="h-full w-full"
+                        allow="autoplay; encrypted-media"
+                      />
                     </div>
-                  )}
-
-                  {seg.kind === 'fingerspell' && seg.letters && (
-                    <div className="flex flex-wrap gap-3">
-                      {seg.letters.map((letter, j) => {
+                    <span className="text-xs font-semibold text-brand-800">{seg.word}</span>
+                  </div>
+                ) : (
+                  <div key={i} className="flex w-28 flex-col items-center gap-1 rounded-xl bg-white p-2">
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {seg.letters?.map((letter, j) => {
                         const feature = referenceSigns?.[letter]?.feature
                         return (
-                          <div key={j} className="flex flex-col items-center gap-1">
-                            <div className="h-16 w-16">
-                              {feature ? (
-                                <HandSkeleton feature={feature} className="h-full w-full text-brand-700" />
-                              ) : null}
-                            </div>
-                            <span className="text-xs font-medium text-gray-500">{letter}</span>
+                          <div key={j} className="h-8 w-8">
+                            {feature ? (
+                              <HandSkeleton feature={feature} className="h-full w-full text-brand-700" />
+                            ) : null}
                           </div>
                         )
                       })}
                     </div>
-                  )}
-                </div>
-              ))}
+                    <span className="text-xs font-medium text-gray-500">{seg.word}</span>
+                  </div>
+                ),
+              )}
           </div>
         </>
       )}

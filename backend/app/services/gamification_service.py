@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models.gamification import Achievement, UserAchievement, XPTransaction
-from app.models.lesson import LessonStatus, UserLessonProgress
+from app.models.lesson import Lesson, LessonStatus, LessonType, UserLessonProgress
 from app.models.user import User
 
 settings = get_settings()
@@ -88,6 +88,7 @@ ACHIEVEMENT_DEFS = [
     ("streak_7", "Week Warrior", "Reach a 7-day streak.", "\U0001F4AA"),
     ("perfect_lesson", "Perfectionist", "Complete a lesson with a perfect score.", "\U0001F31F"),
     ("camera_pro", "Camera Pro", "Get 25 correct camera recognition challenges.", "\U0001F4F7"),
+    ("vocabulary_complete", "Vocabulary Builder", "Complete every vocabulary category.", "\U0001F4DA"),
 ]
 
 
@@ -112,12 +113,38 @@ def check_and_grant_achievements(db: Session, user: User) -> list[str]:
         )
         .count()
     )
+    # Scoped by track: completing 26 lessons of ANY mix isn't "the alphabet"
+    # — must be specifically all 26 alphabet-track lessons. Same idea for
+    # vocabulary_complete against however many vocabulary categories exist.
+    completed_alphabet = (
+        db.query(UserLessonProgress)
+        .join(Lesson, Lesson.id == UserLessonProgress.lesson_id)
+        .filter(
+            UserLessonProgress.user_id == user.id,
+            UserLessonProgress.status == LessonStatus.COMPLETED,
+            Lesson.lesson_type == LessonType.ALPHABET,
+        )
+        .count()
+    )
+    completed_vocabulary = (
+        db.query(UserLessonProgress)
+        .join(Lesson, Lesson.id == UserLessonProgress.lesson_id)
+        .filter(
+            UserLessonProgress.user_id == user.id,
+            UserLessonProgress.status == LessonStatus.COMPLETED,
+            Lesson.lesson_type == LessonType.VOCABULARY,
+        )
+        .count()
+    )
+    total_vocabulary_lessons = db.query(Lesson).filter(Lesson.lesson_type == LessonType.VOCABULARY).count()
 
     to_check = []
     if completed_lessons >= 1:
         to_check.append("first_lesson")
-    if completed_lessons >= 26:
+    if completed_alphabet >= 26:
         to_check.append("alphabet_complete")
+    if total_vocabulary_lessons > 0 and completed_vocabulary >= total_vocabulary_lessons:
+        to_check.append("vocabulary_complete")
     if user.current_streak >= 3:
         to_check.append("streak_3")
     if user.current_streak >= 7:

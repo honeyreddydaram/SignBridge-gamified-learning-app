@@ -17,14 +17,31 @@ class LessonStatus(str, PyEnum):
     COMPLETED = "completed"
 
 
+class LessonType(str, PyEnum):
+    ALPHABET = "alphabet"  # one lesson per A-Z letter
+    VOCABULARY = "vocabulary"  # one lesson per thematic word category (see curriculum.py)
+
+
 class Lesson(Base):
-    """One lesson per A-Z letter, ordered into a linear path."""
+    """
+    Two independent, separately-unlocking tracks share this table:
+      - alphabet: 26 rows, one per letter, order_index 1-26
+      - vocabulary: one row per thematic category built from the verified
+        114-word sign manifest (ml/word_signs_verified.json), order_index 1-N
+    order_index is only unique WITHIN a lesson_type (see __table_args__) so
+    both tracks can each start their own numbering at 1 and unlock
+    independently — completing the alphabet is not a prerequisite for
+    starting vocabulary, or vice versa.
+    """
 
     __tablename__ = "lessons"
+    __table_args__ = (UniqueConstraint("lesson_type", "order_index", name="uq_lesson_type_order"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    letter: Mapped[str] = mapped_column(String(1), unique=True, nullable=False)
-    order_index: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    lesson_type: Mapped[LessonType] = mapped_column(Enum(LessonType), nullable=False, default=LessonType.ALPHABET)
+    letter: Mapped[str | None] = mapped_column(String(1), unique=True, nullable=True)
+    concept_key: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False, default="")
 

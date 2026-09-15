@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.config import get_settings
-from app.curriculum import LETTERS, generate_lesson_exercises
+from app.curriculum import LETTERS, generate_lesson_exercises, generate_vocabulary_exercises
 from app.database import get_db
-from app.models.lesson import Lesson, LessonStatus, UserLessonProgress
+from app.models.lesson import Lesson, LessonStatus, LessonType, UserLessonProgress
 from app.models.user import User
 from app.schemas.lesson import LessonCompletionRequest, LessonCompletionResult, LessonOut
 from app.services.gamification_service import (
@@ -50,7 +50,9 @@ def list_lessons(current_user: User = Depends(get_current_user), db: Session = D
 def _to_lesson_out(lesson: Lesson, progress: UserLessonProgress) -> LessonOut:
     return LessonOut(
         id=lesson.id,
+        lesson_type=lesson.lesson_type,
         letter=lesson.letter,
+        concept_key=lesson.concept_key,
         order_index=lesson.order_index,
         title=lesson.title,
         description=lesson.description,
@@ -74,9 +76,14 @@ def get_lesson_exercises(
         raise HTTPException(status_code=403, detail="Lesson is locked")
     db.commit()
 
+    if lesson.lesson_type == LessonType.ALPHABET:
+        exercises = generate_lesson_exercises(lesson.letter, LETTERS)
+    else:
+        exercises = generate_vocabulary_exercises(lesson.concept_key)
+
     return {
         "lesson": _to_lesson_out(lesson, progress),
-        "exercises": generate_lesson_exercises(lesson.letter, LETTERS),
+        "exercises": exercises,
     }
 
 
@@ -111,18 +118,24 @@ def complete_lesson(
 
     xp_awarded = 0
     leveled_up = False
+    lesson_key = lesson.letter or lesson.concept_key
     if first_completion:
         xp_awarded += settings.xp_per_lesson_complete
         if score_pct == 100:
             xp_awarded += settings.xp_per_perfect_lesson
-        leveled_up = award_xp(db, current_user, xp_awarded, reason=f"lesson_complete:{lesson.letter}")
+        leveled_up = award_xp(db, current_user, xp_awarded, reason=f"lesson_complete:{lesson_key}")
 
     touch_daily_streak(db, current_user)
 
     newly_unlocked_ids: list[int] = []
     if first_completion:
+        # Scoped to the same track (alphabet vs vocabulary): the two tracks
+        # unlock independently, so completing the last alphabet lesson must
+        # not unlock the first vocabulary lesson or vice versa.
         next_lesson = (
-            db.query(Lesson).filter(Lesson.order_index == lesson.order_index + 1).first()
+            db.query(Lesson)
+            .filter(Lesson.lesson_type == lesson.lesson_type, Lesson.order_index == lesson.order_index + 1)
+            .first()
         )
         if next_lesson:
             next_progress = _get_or_create_progress(db, current_user, next_lesson)

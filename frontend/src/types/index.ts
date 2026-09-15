@@ -12,10 +12,13 @@ export interface UserProfile {
 }
 
 export type LessonStatus = 'locked' | 'unlocked' | 'completed'
+export type LessonType = 'alphabet' | 'vocabulary'
 
 export interface Lesson {
   id: number
-  letter: string
+  lesson_type: LessonType
+  letter: string | null
+  concept_key: string | null
   order_index: number
   title: string
   description: string
@@ -23,6 +26,16 @@ export interface Lesson {
   best_score_pct: number
   attempts: number
   completed_at: string | null
+}
+
+export interface SignVideo {
+  provider: string
+  video_id: string
+  watch_url: string
+  embed_url: string
+  loop_embed_url: string
+  source_title: string
+  source_channel: string
 }
 
 export interface LearnCardExercise {
@@ -53,11 +66,35 @@ export interface CameraChallengeExercise {
   target_letter: string
 }
 
+export interface VocabVideoCardExercise {
+  type: 'vocab_video_card'
+  word: string
+  description: string
+  video: SignVideo
+  source_channel: string
+}
+
+export interface VocabComprehensionExercise {
+  type: 'vocab_comprehension_mcq'
+  prompt: string
+  video: SignVideo
+  options: string[]
+  correct_option: string
+}
+
+export interface VocabMirrorPracticeExercise {
+  type: 'vocab_mirror_practice'
+  words: string[]
+}
+
 export type Exercise =
   | LearnCardExercise
   | SignIdentificationExercise
   | LetterToSignExercise
   | CameraChallengeExercise
+  | VocabVideoCardExercise
+  | VocabComprehensionExercise
+  | VocabMirrorPracticeExercise
 
 export interface LessonExercisesResponse {
   lesson: Lesson
@@ -99,26 +136,15 @@ export type ReferenceLandmarks = Record<string, ReferenceLandmark>
 
 export type InterpretSegmentKind = 'sign' | 'fingerspell' | 'space'
 
-export interface SignVideo {
-  provider: string
-  video_id: string
-  watch_url: string
-  embed_url: string
-  source_title: string
-  source_channel: string
-}
-
 export interface InterpretSegment {
   kind: InterpretSegmentKind
   word: string
-  description?: string | null
   video?: SignVideo | null
   letters?: string[] | null
 }
 
 export interface SupportedSignEntry {
   word: string
-  description: string
   source_channel: string
 }
 
