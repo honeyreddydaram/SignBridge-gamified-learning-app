@@ -1,0 +1,50 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.db
+*.sqlite3
+backend/app.db
+
+# --- ML ---
+ml/data/raw/
+ml/data/processed/
+ml/data/*.parquet
+ml/data/*.csv
+ml/data/sample*.png
+ml/mlruns/
+ml/.cache/
+# Google's pretrained hand-pose model: ~8MB third-party binary, fetched by
+# download_hand_landmarker.py — not worth versioning, reproducible on demand.
+ml/models/hand_landmarker.task
+# Our own trained classifier (~600KB) and its derived reference landmarks
+# / evaluation reports ARE versioned intentionally — small, and lets the
+# repo run + be reviewed without forcing a retrain first.
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# --- Env / secrets ---
+.env
+.env.local
+*.pem
+*.key
+backend/.env
+frontend/.env
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Docker ---
+*.log

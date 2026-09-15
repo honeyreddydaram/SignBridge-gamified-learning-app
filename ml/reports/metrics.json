@@ -1,0 +1,204 @@
+{
+  "model_selected": "mlp",
+  "group_cv_accuracy_by_candidate": {
+    "random_forest": 0.3381213476661136,
+    "mlp": 0.404083399466128,
+    "svm_rbf": 0.38971214198109805,
+    "knn": 0.3584878435899286
+  },
+  "model_selection_methodology": "5-fold GroupKFold cross-validation (grouped by source photo) over the trainval pool, NOT a single train/val split. An earlier version used one fixed group split for model selection and found it unstable (validation accuracy swung ~30%-95% depending purely on which fold a single heavily-augmented source photo landed in, not on model quality). Averaging over 5 folds removes that instability.",
+  "test_accuracy": 0.8571428571428571,
+  "test_accuracy_95pct_wilson_ci": [
+    0.762,
+    0.9183
+  ],
+  "test_set_size_caveat": "Test set is only n=77 images (~2-3 per letter). This is a structural limit of the source dataset (~16-20 unique real photos per letter total, see DATA_CARD.md), not an arbitrary small split. Per-class precision/recall/f1 below are computed on 2-4 examples per class and should be read as indicative, not statistically robust \u2014 prefer the overall accuracy + CI.",
+  "test_classification_report": {
+    "A": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "B": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "C": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "D": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "E": {
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1-score": 0.75,
+      "support": 3.0
+    },
+    "F": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "G": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "H": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "I": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "J": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "K": {
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.6666666666666666,
+      "support": 3.0
+    },
+    "L": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "M": {
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.6666666666666666,
+      "support": 3.0
+    },
+    "N": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "O": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "P": {
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1-score": 0.8571428571428571,
+      "support": 3.0
+    },
+    "Q": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 2.0
+    },
+    "R": {
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.5714285714285714,
+      "support": 3.0
+    },
+    "S": {
+      "precision": 0.5,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.5714285714285714,
+      "support": 3.0
+    },
+    "T": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "U": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "V": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "W": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "X": {
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1-score": 0.75,
+      "support": 3.0
+    },
+    "Y": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 3.0
+    },
+    "Z": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1-score": 0.8,
+      "support": 3.0
+    },
+    "accuracy": 0.8571428571428571,
+    "macro avg": {
+      "precision": 0.8955128205128204,
+      "recall": 0.8589743589743589,
+      "f1-score": 0.8628205128205129,
+      "support": 77.0
+    },
+    "weighted avg": {
+      "precision": 0.894155844155844,
+      "recall": 0.8571428571428571,
+      "f1-score": 0.8610389610389612,
+      "support": 77.0
+    }
+  },
+  "dataset": {
+    "source": "Marxulia/asl_sign_languages_alphabets_v03 (HuggingFace Hub)",
+    "total_images_downloaded": 10873,
+    "images_with_hand_detected": 8638,
+    "images_after_per_photo_cap": 911,
+    "unique_base_photos_total": 417,
+    "max_images_per_source_photo_cap": 20
+  },
+  "split_methodology": "Split by unique base source photo (not by individual augmented image) into an 80% trainval pool and a held-out 20% test set, stratified per letter, capped to at most 20 images per source photo so the one heavily-augmented photo per letter can't dominate that class's training signal. Model selection uses 5-fold GroupKFold CV within trainval (see model_selection_methodology); the test set is touched exactly once, after model selection is finalized. No augmented copy of a base photo appears in more than one of {trainval, test}, or in more than one CV fold.",
+  "split_sizes": {
+    "trainval_images": 834,
+    "test_images": 77,
+    "trainval_base_photos": 340,
+    "test_base_photos": 77
+  },
+  "feature_representation": "63-dim (21 MediaPipe hand landmarks x,y,z), wrist-origin + scale normalized",
+  "random_seed": 42
+}
