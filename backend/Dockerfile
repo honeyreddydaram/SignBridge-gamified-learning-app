@@ -28,6 +28,7 @@ COPY ml/models/asl_landmark_classifier.joblib ml/models/asl_landmark_classifier.
 COPY ml/models/reference_landmarks.json ml/models/reference_landmarks.json
 COPY ml/word_signs_verified.json ml/word_signs_verified.json
 COPY ml/scripts/download_hand_landmarker.py ml/scripts/download_hand_landmarker.py
+COPY ml/scripts/landmark_utils.py ml/scripts/landmark_utils.py
 RUN python ml/scripts/download_hand_landmarker.py
 
 WORKDIR /app/backend
