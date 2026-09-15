@@ -8,31 +8,25 @@ Most "ASL apps" are either a static dictionary (look up a word, see a picture) o
 
 ## Demo — See SignBridge in Action
 
-Real screen recordings of the running app — not mockups, not staged renders. GitHub's README renderer strips raw `<video>` tags, so each preview below is a real frame from that recording, linked to the actual `.mp4` (opens GitHub's built-in video player).
+Real screen recordings of the running app — not mockups, not staged renders. (GitHub's README renderer strips raw `<video>` tags and its blob-view file preview has a size cap smaller than these clips, so these are embedded via GitHub's own asset-attachment pipeline, which plays inline directly below.)
 
 ### Learning — Learn & Practice ASL
 
-The project's main differentiator: a mastery-based, gamified curriculum (Learn → Recognize → Produce → Recall → Master, Sign Quests, XP/streaks/hearts) rather than a single demo model. See [Gamified Learning](#gamified-learning) below for the full mechanics.
+**⭐ Start here** — the project's main differentiator: a mastery-based, gamified curriculum (Learn → Recognize → Produce → Recall → Master, Sign Quests, XP/streaks/hearts) rather than a single demo model. See [Gamified Learning](#gamified-learning) below for the full mechanics.
 
-[![Learning demo preview](docs/demos/posters/learning.jpg)](docs/demos/learning.mp4)
-
-**▶ [Watch Learning Demo](docs/demos/learning.mp4)**
+https://github.com/user-attachments/assets/c4d69de7-3dd0-4180-bc1a-cfc68a068f9a
 
 ### Recognition — Sign → Text
 
 Live webcam A-Z fingerspelling recognition. See [Known limitations](#known-limitations) for what the accuracy numbers do and don't cover.
 
-[![Recognition demo preview](docs/demos/posters/recognition.jpg)](docs/demos/recognition.mp4)
-
-**▶ [Watch Recognition Demo](docs/demos/recognition.mp4)**
+https://github.com/user-attachments/assets/34ea9c02-fb56-4713-a32f-b2c2b49b4b98
 
 ### Interpretation — Text → Sign
 
 Typed English playing back as sign video for supported vocabulary, fingerspelling as the fallback — a communication aid, not full grammatical ASL translation.
 
-[![Interpretation demo preview](docs/demos/posters/interpretation.jpg)](docs/demos/interpretation.mp4)
-
-**▶ [Watch Interpretation Demo](docs/demos/interpretation.mp4)**
+https://github.com/user-attachments/assets/1247f733-0561-4cea-9194-8a1acd521d85
 
 ## The three modules
 
