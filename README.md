@@ -6,6 +6,10 @@ An AI-powered ASL (American Sign Language) accessibility platform that pairs rea
 
 Most "ASL apps" are either a static dictionary (look up a word, see a picture) or a single demo model with no path from *seeing* a sign to actually *knowing* it. SignBridge tries to close that gap: a real computer-vision recognizer gives learners honest feedback instead of just a video to imitate, real signer video (not stock photos or synthetic avatars) sources every sign that's taught, and progress is tracked as a mastery state per word rather than a single "lesson complete" checkbox — so the app reflects what a learner actually retains over time, not just what they clicked through once. It's built to be useful both as a communication aid (Interpretation) and as a genuine learning tool (Learn), while being explicit about where the underlying ML does and doesn't reach — see [Known limitations](#known-limitations).
 
+## Live demo
+
+*(Coming soon — see [Deploying](#deploying) below. Once it's up, the link goes here.)*
+
 ## Demo — See SignBridge in Action
 
 Real screen recordings of the running app — not mockups, not staged renders. (GitHub's README renderer strips raw `<video>` tags and its blob-view file preview has a size cap smaller than these clips, so these are embedded via GitHub's own asset-attachment pipeline, which plays inline directly below.)
@@ -167,6 +171,21 @@ docker compose up --build
 ```
 
 Opens the app at `http://localhost:8080` with Postgres instead of SQLite. **This was written but could not be build-tested** in the environment this repo was created in, because Docker Desktop's engine wasn't running there (only the CLI was available). Review the Dockerfiles before relying on this path.
+
+### Deploying
+
+`render.yaml` deploys the full app (backend + frontend, both as Docker web services) to [Render](https://render.com) in one step:
+
+1. On Render: **New** → **Blueprint** → select this repo/branch. Render reads `render.yaml` and proposes two services (`signbridge-backend`, `signbridge-frontend`) — review and apply. `JWT_SECRET_KEY` is generated automatically; you don't set it.
+2. Wait for both to finish their first build (the backend's is slower — it installs MediaPipe/scikit-learn/OpenCV and downloads the pretrained hand-landmarker model).
+3. **Manual step** (Render can't know either service's URL before it exists, so this can't be automated in the blueprint): once both are live, copy each service's actual URL, then:
+   - On `signbridge-backend` → Environment → set `FRONTEND_ORIGIN` to the frontend's exact URL (`https://...`, no trailing slash) → save (triggers a redeploy).
+   - On `signbridge-frontend` → Environment → set `BACKEND_URL` to the backend's exact URL → save (triggers a redeploy).
+4. Visit the frontend URL, sign up, and use the app.
+
+Two real constraints of the free tier, not a bug: services **spin down after 15 minutes idle** and take 30–50s to cold-start on the next visit; and SQLite has **no persistent disk** here, so signups/progress reset on every redeploy or restart (the seed data reloads every time, so the app itself always comes back up correctly — just without prior user accounts). Fine for a demo, not for real users.
+
+Like the Docker setup above, **this has not been deployed against a real Render account** in the environment this was written in — reviewed carefully against `config.py`'s path defaults and Render's documented Blueprint spec, but verify your first deploy against it.
 
 ## Data & media sourcing
 
