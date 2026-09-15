@@ -6,15 +6,33 @@ An AI-powered ASL (American Sign Language) accessibility platform that pairs rea
 
 Most "ASL apps" are either a static dictionary (look up a word, see a picture) or a single demo model with no path from *seeing* a sign to actually *knowing* it. SignBridge tries to close that gap: a real computer-vision recognizer gives learners honest feedback instead of just a video to imitate, real signer video (not stock photos or synthetic avatars) sources every sign that's taught, and progress is tracked as a mastery state per word rather than a single "lesson complete" checkbox — so the app reflects what a learner actually retains over time, not just what they clicked through once. It's built to be useful both as a communication aid (Interpretation) and as a genuine learning tool (Learn), while being explicit about where the underlying ML does and doesn't reach — see [Known limitations](#known-limitations).
 
-## Screenshots
+## Demo — See SignBridge in Action
 
-*(To be added — see [`docs/screenshots/README.md`](docs/screenshots/README.md) for exactly what to capture.)*
+Real screen recordings of the running app — not mockups, not staged renders.
 
-1. **Dashboard — ASL Journey**: level, XP, streak, hearts, and the Alphabet → vocabulary-category progression map.
-2. **Recognition — live**: webcam feed with a real-time predicted letter.
-3. **Vocabulary lesson — the mastery loop**: a lesson mid-flow (video card or a Produce/Recall self-check step).
-4. **Sign Quests**: a quest or scenario screen (e.g. the Greetings Quest).
-5. **Interpretation**: typed English playing back as real sign video.
+### Learning — Learn & Practice ASL
+
+The project's main differentiator: a mastery-based, gamified curriculum (Learn → Recognize → Produce → Recall → Master, Sign Quests, XP/streaks/hearts) rather than a single demo model. See [Gamified Learning](#gamified-learning) below for the full mechanics.
+
+<video controls poster="docs/demos/posters/learning.jpg" src="docs/demos/learning.mp4" width="760">
+Your browser doesn't support embedded video — <a href="docs/demos/learning.mp4">download the recording</a> directly.
+</video>
+
+### Recognition — Sign → Text
+
+Live webcam A-Z fingerspelling recognition. See [Known limitations](#known-limitations) for what the accuracy numbers do and don't cover.
+
+<video controls poster="docs/demos/posters/recognition.jpg" src="docs/demos/recognition.mp4" width="480">
+Your browser doesn't support embedded video — <a href="docs/demos/recognition.mp4">download the recording</a> directly.
+</video>
+
+### Interpretation — Text → Sign
+
+Typed English playing back as sign video for supported vocabulary, fingerspelling as the fallback — a communication aid, not full grammatical ASL translation.
+
+<video controls poster="docs/demos/posters/interpretation.jpg" src="docs/demos/interpretation.mp4" width="480">
+Your browser doesn't support embedded video — <a href="docs/demos/interpretation.mp4">download the recording</a> directly.
+</video>
 
 ## The three modules
 
