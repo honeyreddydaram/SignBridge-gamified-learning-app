@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.config import get_settings
-from app.curriculum import LETTERS, generate_lesson_exercises, generate_vocabulary_exercises
+from app.curriculum import LETTERS, generate_lesson_exercises, generate_vocabulary_exercises, get_vocabulary_categories
 from app.database import get_db
 from app.models.lesson import Lesson, LessonStatus, LessonType, UserLessonProgress
+from app.models.mastery import UserSignMastery
 from app.models.user import User
 from app.schemas.lesson import LessonCompletionRequest, LessonCompletionResult, LessonOut
 from app.services.gamification_service import (
@@ -79,7 +80,14 @@ def get_lesson_exercises(
     if lesson.lesson_type == LessonType.ALPHABET:
         exercises = generate_lesson_exercises(lesson.letter, LETTERS)
     else:
-        exercises = generate_vocabulary_exercises(lesson.concept_key)
+        category = next(c for c in get_vocabulary_categories() if c["key"] == lesson.concept_key)
+        mastery_rows = (
+            db.query(UserSignMastery)
+            .filter(UserSignMastery.user_id == current_user.id, UserSignMastery.word.in_(category["words"]))
+            .all()
+        )
+        mastery_by_word = {m.word: m.state.value for m in mastery_rows}
+        exercises = generate_vocabulary_exercises(lesson.concept_key, mastery_by_word)
 
     return {
         "lesson": _to_lesson_out(lesson, progress),

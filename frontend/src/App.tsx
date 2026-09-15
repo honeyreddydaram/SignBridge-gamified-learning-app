@@ -6,6 +6,8 @@ import { Interpretation } from './pages/Interpretation'
 import { LessonDetail } from './pages/LessonDetail'
 import { LessonPath } from './pages/LessonPath'
 import { Login } from './pages/Login'
+import { QuestDetail } from './pages/QuestDetail'
+import { Quests } from './pages/Quests'
 import { Recognition } from './pages/Recognition'
 import { Signup } from './pages/Signup'
 import { useAuth } from './store/AuthContext'
@@ -56,6 +58,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quests"
+          element={
+            <ProtectedRoute>
+              <Quests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quests/:questKey"
+          element={
+            <ProtectedRoute>
+              <QuestDetail />
             </ProtectedRoute>
           }
         />

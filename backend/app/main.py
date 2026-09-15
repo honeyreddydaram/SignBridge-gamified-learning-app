@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, interpretation, lessons, recognition, users
+from app.api import auth, interpretation, lessons, quests, recognition, users, vocabulary
 from app.config import get_settings
 
 settings = get_settings()
@@ -21,6 +21,8 @@ app.include_router(users.router)
 app.include_router(lessons.router)
 app.include_router(recognition.router)
 app.include_router(interpretation.router)
+app.include_router(vocabulary.router)
+app.include_router(quests.router)
 
 
 @app.get("/api/health")

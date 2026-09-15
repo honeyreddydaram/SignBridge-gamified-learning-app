@@ -1,16 +1,21 @@
 """
 Idempotent seed script: populates both lesson tracks (26-letter alphabet +
-vocabulary categories built from the verified 114-word sign manifest) and
-the static achievement catalog. Safe to run repeatedly.
+vocabulary categories built from the verified 114-word sign manifest), the
+Sign Quest catalog, and the static achievement catalog. Safe to run
+repeatedly.
 
 Usage (from backend/):
     python -m app.seed
 """
 
+import json
+
 from app.curriculum import LETTER_DESCRIPTIONS, LETTERS, get_vocabulary_categories
 from app.database import SessionLocal
 from app.models.gamification import Achievement
 from app.models.lesson import Lesson, LessonType
+from app.models.mastery import Quest
+from app.quests import get_quest_defs
 from app.services.gamification_service import ACHIEVEMENT_DEFS
 
 
@@ -49,6 +54,23 @@ def seed() -> None:
             )
         db.commit()
 
+        existing_quest_keys = {q.quest_key for q in db.query(Quest).all()}
+        for i, quest in enumerate(get_quest_defs(), start=1):
+            if quest["key"] in existing_quest_keys:
+                continue
+            db.add(
+                Quest(
+                    quest_key=quest["key"],
+                    quest_type=quest["type"],
+                    title=quest["title"],
+                    description=quest["description"],
+                    prompt=quest.get("prompt"),
+                    words_json=json.dumps(quest["words"]),
+                    order_index=i,
+                )
+            )
+        db.commit()
+
         existing_codes = {a.code for a in db.query(Achievement).all()}
         for code, title, description, icon in ACHIEVEMENT_DEFS:
             if code in existing_codes:
@@ -57,9 +79,10 @@ def seed() -> None:
         db.commit()
 
         vocab_count = len(get_vocabulary_categories())
+        quest_count = len(get_quest_defs())
         print(
             f"Seeded {len(LETTERS)} alphabet lessons, {vocab_count} vocabulary lessons, "
-            f"and {len(ACHIEVEMENT_DEFS)} achievements (idempotent)."
+            f"{quest_count} quests, and {len(ACHIEVEMENT_DEFS)} achievements (idempotent)."
         )
     finally:
         db.close()

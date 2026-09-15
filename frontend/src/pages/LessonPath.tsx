@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { lessonsApi } from '../api/endpoints'
+import { AslJourney } from '../components/AslJourney'
 import type { Lesson } from '../types'
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -37,7 +38,9 @@ export function LessonPath() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-1 text-2xl font-bold text-brand-800">Learn ASL</h1>
+      <h1 className="mb-6 text-2xl font-bold text-brand-800">Learn ASL</h1>
+
+      <AslJourney lessons={lessons} />
 
       <section className="mb-10">
         <h2 className="mb-1 text-lg font-semibold text-brand-800">Alphabet</h2>

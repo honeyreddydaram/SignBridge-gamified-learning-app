@@ -19,6 +19,7 @@ export function Navbar() {
           <span className="text-lg font-bold text-brand-700">SignBridge</span>
           <div className="ml-2 flex flex-wrap gap-1">
             <NavLink to="/learn" className={linkClass}>Learn</NavLink>
+            <NavLink to="/quests" className={linkClass}>Quests</NavLink>
             <NavLink to="/recognize" className={linkClass}>Recognize</NavLink>
             <NavLink to="/interpret" className={linkClass}>Interpret</NavLink>
             <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>

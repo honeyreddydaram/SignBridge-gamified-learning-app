@@ -4,7 +4,7 @@ A full-stack ASL (American Sign Language) accessibility and learning app with th
 
 1. **Recognition** — real webcam ASL fingerspelling recognition (A-Z), backed by a landmark-based classifier trained on real data (see `ml/`).
 2. **Interpretation** — a *communication* tool: type English, see it play back immediately as short looping ASL sign clips (real video of an actual signer, autoplaying/looping, minimal UI), with A-Z fingerspelling as the fallback for anything else. Only 18 of the 114 verified words have a video dedicated to just that one sign (safe to loop cleanly) — those are what Interpretation shows; the rest fingerspell here even though they're supported for teaching in Learning (see below). Clearly distinguished from full grammatical ASL translation, which this app does **not** claim to do.
-3. **Learn** — a gamified curriculum with two independently-unlocking tracks: the A-Z alphabet (lesson path, quizzes, camera challenges validated by the recognition model), and 10 vocabulary categories covering all 114 verified words (real video + description + source attribution + replay controls + comprehension quiz + ungraded camera self-practice per category). Both tracks share XP, streaks, hearts, and achievements. Camera challenges are alphabet-only — see Known Limitations for why.
+3. **Learn** — a gamified, mastery-based curriculum with two independently-unlocking tracks: the A-Z alphabet (lesson path, quizzes, camera challenges validated by the recognition model), and 10 vocabulary categories covering all 114 verified words, taught through a **Learn → Recognize → Produce → Recall → Master** loop per word (not "watch once, done") — see "Vocabulary mastery loop & Sign Quests" below. **Sign Quests** are short reinforcement missions (e.g. Greetings Quest: HELLO/PLEASE/THANK YOU) and situational **scenarios** ("you meet someone for the first time...") that put already-learned vocabulary to use with one camera self-check at a time. A visual **ASL Journey** shows real progress across Alphabet → Greetings → Family → ... Both tracks/quests share XP, streaks, hearts, and achievements. Camera challenges are model-graded for the alphabet only — vocabulary/quest camera steps are self-checked — see Known Limitations for why.
 
 See `ml/MODEL_CARD.md` for the actual, honestly-measured accuracy of the trained model (not invented), `ml/DATA_CARD.md` for dataset provenance, and `ARCHITECTURE.md` for how the pieces fit together.
 
@@ -94,7 +94,27 @@ cd backend
 python -m pytest tests/ -v
 ```
 
-31 tests covering auth (including a bcrypt-72-byte-limit regression test), lesson progression/unlocking/XP/achievements for both tracks (including a regression test that vocabulary completions don't accidentally trigger the alphabet-specific achievement), interpretation's communication-mode restriction (dedicated-video words play, compilation-video words fingerspell), and the landmark normalization math shared between training and inference.
+49 tests covering auth (including a bcrypt-72-byte-limit regression test), lesson progression/unlocking/XP/achievements for both tracks (including a regression test that vocabulary completions don't accidentally trigger the alphabet-specific achievement), the mastery state machine (including "can't master a word in one sitting" as an explicit test), Sign Quests, interpretation's communication-mode restriction (dedicated-video words play, compilation-video words fingerspell), and the landmark normalization math shared between training and inference.
+
+## Vocabulary mastery loop & Sign Quests
+
+Vocabulary words aren't marked "done" after being seen once. Each word moves through a state machine (`backend/app/services/mastery_service.py`, `UserSignMastery` table):
+
+```
+New -> Learning -> Practicing -> Mastered
+```
+
+- **Learn**: real verified video + description (`vocab_video_card`)
+- **Recognize**: real graded multiple-choice quiz — "which sign means X?" (`vocab_comprehension_mcq`) — objectively scored, feeds mastery for real
+- **Produce**: "your turn" — camera opens, learner signs it (`vocab_produce_selfcheck`)
+- **Recall**: on a later visit once a word reaches Practicing, the SAME lesson presents it as recall-only — no demo shown first, testing memory rather than imitation (`vocab_recall_selfcheck`)
+- **Master**: requires a successful Recall self-check occurring on a *different calendar day* than earlier interactions with that word — a single sitting cannot master a word by itself, however many times you click through it. Mastered is sticky (never downgrades).
+
+Produce and Recall are **always self-checked** (the learner marks their own attempt), never model-graded — see "Known limitations" below for exactly why, and `SelfCheckCamera.tsx` for how this is labeled in the UI. Self-checked XP is deliberately smaller than graded XP (Recognize quiz, lesson completion, mastery milestones, quest completion) — see `backend/app/config.py`'s `xp_per_selfcheck` vs `xp_per_correct_answer`.
+
+**Sign Quests** (`backend/app/quests.py`, `Quest`/`UserQuestProgress` tables) are short reinforcement missions over vocabulary already taught elsewhere — not a new teaching unit, so they're a separate architecture from `Lesson`. Two quest types share one system: `mission` (a checklist — Greetings Quest: HELLO ✓ / PLEASE ✓ / THANK YOU ☐, one camera self-check per word) and `scenario` (a short situational prompt expecting one concept, e.g. "You meet someone for the first time — how would you greet them?" → HELLO). New quests are added as data in `QUEST_DEFS`, not new screens — the API and UI are entirely generic over the list.
+
+**Streaks stay separate from mastery on purpose**: missing a day resets `current_streak` (unchanged, existing behavior) but never touches `UserSignMastery` — mastery progress only ever accumulates, so a broken streak doesn't erase what's actually been learned.
 
 ## Docker (best-effort — see Known Limitations)
 
@@ -128,7 +148,8 @@ A word only gets a video in either module if it has a verified entry — nothing
 - **Recognition accuracy is measured, not assumed**: 85.7% on a held-out test set of 77 images from the *same* source dataset (95% CI: 76.2%-91.8%). Real-world webcam accuracy on a different camera/lighting/hand has not been measured and is likely lower — treat live recognition as a genuine, working demonstration, not a validated production recognizer.
 - Interpretation's communication mode covers 18/114 words with clean single-sign video; the rest fingerspell there (see above) even though all 114 have full video in Learning.
 - Neither module produces grammatical ASL (see the in-app disclaimer, sourced from `backend/app/api/interpretation.py`) — this is a fingerspelling/vocabulary aid, not a translator.
-- **Vocabulary lessons have no recognition-graded camera challenge** (unlike the alphabet track). The trained recognition model only classifies static A-Z fingerspelling handshapes from a single frame — it was never trained on, and cannot validate, dynamic multi-frame word-level signs like HELLO. Vocabulary lessons instead end with an ungraded "mirror practice" step (learner's own camera feed, self-directed, explicitly not auto-graded) rather than fabricating a validation capability the model doesn't have. See `backend/app/curriculum.py`'s `generate_vocabulary_exercises` docstring.
+- **Vocabulary/quest/scenario camera steps have no recognition-graded validation** (unlike the alphabet track). The trained recognition model only classifies static A-Z fingerspelling handshapes from a single frame (confirmed by directly inspecting the trained model file — its label encoder has exactly 26 classes, `A`-`Z`) — it was never trained on, and structurally cannot validate, dynamic multi-frame word-level signs like HELLO. Every Produce/Recall/quest/scenario camera step is instead **self-checked**: the learner's own camera feed, and the learner (not the model) marks whether they got it right, always visibly labeled as a self-check (`SelfCheckCamera.tsx`) rather than fabricating a validation capability the model doesn't have. See `backend/app/services/mastery_service.py`'s module docstring.
+- Mastery state is per-word and never downgrades once Mastered — an honest self-report of "need more practice" after mastery doesn't revoke it. This is a deliberate simplicity trade-off (documented in `mastery_service.py`), not an oversight.
 - A few Learning-module source videos are compilations reused across several related words (e.g. one "Colors" video backs all 10 color entries) — noted per-entry in `ml/word_signs_verified.json`'s `notes` field, and flagged as a maintenance risk (single point of failure if a compilation video is taken down) in `ml/word_signs_research_report.md`.
 - Sign cards / fingerspelling visuals are SVG hand-skeletons rendered from real per-letter landmark data computed by the training pipeline (`ml/models/reference_landmarks.json`) — not stock photos or hand-drawn art, because the training dataset's license doesn't permit redistributing its images.
 - Docker Compose is untested end-to-end (see above).

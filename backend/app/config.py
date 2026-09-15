@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     xp_per_lesson_complete: int = 50
     xp_per_perfect_lesson: int = 25  # bonus on top of completion XP
 
+    # Mastery loop XP — self-checked steps (Produce/Recall/quest/scenario) are
+    # deliberately lower-value than model-graded or objectively-scored
+    # activities, since there's no accuracy signal behind a self-report.
+    xp_per_selfcheck: int = 3
+    xp_per_sign_mastered: int = 30
+    xp_per_quest_complete: int = 60
+
 
 @lru_cache
 def get_settings() -> Settings:

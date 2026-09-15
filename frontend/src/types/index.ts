@@ -82,9 +82,16 @@ export interface VocabComprehensionExercise {
   correct_option: string
 }
 
-export interface VocabMirrorPracticeExercise {
-  type: 'vocab_mirror_practice'
-  words: string[]
+export interface VocabProduceSelfCheckExercise {
+  type: 'vocab_produce_selfcheck'
+  word: string
+  prompt: string
+}
+
+export interface VocabRecallSelfCheckExercise {
+  type: 'vocab_recall_selfcheck'
+  word: string
+  prompt: string
 }
 
 export type Exercise =
@@ -94,7 +101,8 @@ export type Exercise =
   | CameraChallengeExercise
   | VocabVideoCardExercise
   | VocabComprehensionExercise
-  | VocabMirrorPracticeExercise
+  | VocabProduceSelfCheckExercise
+  | VocabRecallSelfCheckExercise
 
 export interface LessonExercisesResponse {
   lesson: Lesson
@@ -152,4 +160,54 @@ export interface InterpretResponse {
   segments: InterpretSegment[]
   is_full_grammatical_asl: boolean
   disclaimer: string
+}
+
+// --- Mastery loop ---
+
+export type MasteryState = 'new' | 'learning' | 'practicing' | 'mastered'
+
+export interface SignInteractionResult {
+  word: string
+  state: MasteryState
+  just_mastered: boolean
+  xp_awarded: number
+  new_achievements: string[]
+  level: number
+  xp_total: number
+}
+
+export interface MasterySummary {
+  new: number
+  learning: number
+  practicing: number
+  mastered: number
+  needs_practice: string[]
+}
+
+// --- Sign Quests ---
+
+export type QuestType = 'mission' | 'scenario'
+
+export interface QuestWordStatus {
+  word: string
+  completed: boolean
+  mastery_state: MasteryState
+}
+
+export interface Quest {
+  key: string
+  quest_type: QuestType
+  title: string
+  description: string
+  prompt: string | null
+  words: QuestWordStatus[]
+  status: 'in_progress' | 'completed'
+  completed_at: string | null
+}
+
+export interface QuestStepResult {
+  quest: Quest
+  xp_awarded: number
+  quest_completed: boolean
+  new_achievements: string[]
 }

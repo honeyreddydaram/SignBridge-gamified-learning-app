@@ -5,8 +5,12 @@ import type {
   Lesson,
   LessonCompletionResult,
   LessonExercisesResponse,
+  MasterySummary,
+  Quest,
+  QuestStepResult,
   ReferenceLandmarks,
   RecognitionResult,
+  SignInteractionResult,
   SupportedSignEntry,
   UserProfile,
 } from '../types'
@@ -50,4 +54,21 @@ export const interpretationApi = {
     apiClient.get<{ count: number; total_vocabulary_count: number; words: SupportedSignEntry[] }>(
       '/interpretation/supported-signs',
     ),
+}
+
+export const vocabularyApi = {
+  interaction: (word: string, interactionType: string, correct?: boolean) =>
+    apiClient.post<SignInteractionResult>('/vocabulary/interaction', {
+      word,
+      interaction_type: interactionType,
+      correct: correct ?? null,
+    }),
+  masterySummary: () => apiClient.get<MasterySummary>('/vocabulary/mastery-summary'),
+}
+
+export const questsApi = {
+  list: () => apiClient.get<Quest[]>('/quests'),
+  get: (questKey: string) => apiClient.get<Quest>(`/quests/${questKey}`),
+  submitStep: (questKey: string, word: string, selfCorrect: boolean) =>
+    apiClient.post<QuestStepResult>(`/quests/${questKey}/steps`, { word, self_correct: selfCorrect }),
 }

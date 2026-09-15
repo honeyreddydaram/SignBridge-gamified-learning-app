@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { usersApi } from '../api/endpoints'
-import type { Achievement } from '../types'
+import { usersApi, vocabularyApi } from '../api/endpoints'
+import type { Achievement, MasterySummary } from '../types'
 import { useAuth } from '../store/AuthContext'
 
 export function Dashboard() {
   const { user, refreshUser } = useAuth()
   const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [mastery, setMastery] = useState<MasterySummary | null>(null)
 
   useEffect(() => {
     refreshUser()
     usersApi.achievements().then((res) => setAchievements(res.data))
+    vocabularyApi.masterySummary().then((res) => setMastery(res.data))
   }, [refreshUser])
 
   if (!user) return null
@@ -38,6 +40,32 @@ export function Dashboard() {
           <div className="h-full bg-brand-500 transition-all" style={{ width: `${progressPct}%` }} />
         </div>
       </div>
+
+      <h2 className="mb-3 text-lg font-semibold text-brand-800">Vocabulary Mastery</h2>
+      {mastery && (
+        <>
+          <p className="mb-3 text-xs text-gray-500">
+            Progress isn't lost if you miss a day — mastery only ever moves forward, streaks are separate.
+          </p>
+          <div className="mb-4 grid grid-cols-3 gap-4">
+            <StatCard label="Learned" value={mastery.learning} icon="📖" />
+            <StatCard label="Practicing" value={mastery.practicing} icon="💪" />
+            <StatCard label="Mastered" value={mastery.mastered} icon="🏅" />
+          </div>
+          {mastery.needs_practice.length > 0 && (
+            <div className="mb-8 rounded-xl border border-brand-100 bg-white p-4">
+              <p className="mb-2 text-sm font-semibold text-brand-800">Needs practice</p>
+              <div className="flex flex-wrap gap-2">
+                {mastery.needs_practice.map((w) => (
+                  <span key={w} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                    {w}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <h2 className="mb-3 text-lg font-semibold text-brand-800">Achievements</h2>
       {achievements.length === 0 ? (

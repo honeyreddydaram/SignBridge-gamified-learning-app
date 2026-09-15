@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { lessonsApi } from '../api/endpoints'
+import { lessonsApi, vocabularyApi } from '../api/endpoints'
 import { CameraChallenge } from '../components/CameraChallenge'
 import { SignCard } from '../components/SignCard'
 import { HandSkeleton } from '../components/HandSkeleton'
-import { VocabMirrorPractice } from '../components/VocabMirrorPractice'
+import { SelfCheckCamera } from '../components/SelfCheckCamera'
 import { useReferenceSigns } from '../hooks/useReferenceSigns'
 import { useAuth } from '../store/AuthContext'
 import type { Exercise, LessonCompletionResult, SignVideo } from '../types'
@@ -36,7 +36,7 @@ export function LessonDetail() {
   }, [id])
 
   function isGraded(ex: Exercise) {
-    return ex.type !== 'learn_card' && ex.type !== 'vocab_video_card' && ex.type !== 'vocab_mirror_practice'
+    return ex.type !== 'learn_card' && ex.type !== 'vocab_video_card'
   }
 
   async function handleAnswer(correct: boolean) {
@@ -206,6 +206,7 @@ function ExerciseView({
   }
 
   if (exercise.type === 'vocab_comprehension_mcq') {
+    const word = exercise.correct_option
     return (
       <MCQ
         prompt={exercise.prompt}
@@ -213,13 +214,30 @@ function ExerciseView({
         options={exercise.options}
         correctOption={exercise.correct_option}
         renderOption={(opt) => <span className="font-semibold">{opt}</span>}
-        onAnswer={onAnswer}
+        onAnswer={(correct) => {
+          // Recognize is objectively graded (a real MCQ answer) — feeds mastery for real.
+          vocabularyApi.interaction(word, 'recognize', correct).catch(() => {})
+          onAnswer(correct)
+        }}
       />
     )
   }
 
-  if (exercise.type === 'vocab_mirror_practice') {
-    return <VocabMirrorPractice words={exercise.words} onDone={() => onAnswer(true)} />
+  if (exercise.type === 'vocab_produce_selfcheck' || exercise.type === 'vocab_recall_selfcheck') {
+    const interactionType = exercise.type === 'vocab_produce_selfcheck' ? 'produce_selfcheck' : 'recall_selfcheck'
+    return (
+      <SelfCheckCamera
+        prompt={exercise.prompt}
+        onResult={(selfCorrect) => {
+          // Only a successful self-report advances mastery — "need more
+          // practice" is honest feedback, not swept into progress.
+          if (selfCorrect) {
+            vocabularyApi.interaction(exercise.word, interactionType).catch(() => {})
+          }
+          onAnswer(selfCorrect)
+        }}
+      />
+    )
   }
 
   // camera_challenge

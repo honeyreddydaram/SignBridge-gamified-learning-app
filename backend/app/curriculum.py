@@ -106,10 +106,13 @@ def generate_lesson_exercises(letter: str, all_letters: list[str]) -> list[dict]
 # was never trained on, and cannot validate, dynamic multi-frame word-level
 # signs like HELLO or THANK YOU. Claiming to auto-grade those would be
 # exactly the kind of fabricated-working-feature this project explicitly
-# rules out. Instead each vocabulary lesson ends with an ungraded
-# "vocab_mirror_practice" step: the learner's own camera feed alongside a
-# reminder of the words just covered, for self-directed practice — no
-# recognition claim, no fake grading.
+# rules out. Instead, camera steps in the Learn -> Recognize -> Produce ->
+# Recall loop below ("vocab_produce_selfcheck", "vocab_recall_selfcheck")
+# are always SELF-checked: the learner's own camera feed, and the learner
+# (not the model) marks whether they got it right. See
+# generate_vocabulary_exercises() and mastery_service.py for how that feeds
+# mastery state. Sign Quests (app/quests.py) and scenarios follow the same
+# self-check rule.
 # ---------------------------------------------------------------------------
 
 VOCABULARY_CATEGORIES: list[dict] = [
@@ -208,14 +211,40 @@ def _video_dict(sign) -> dict:
     }
 
 
-def generate_vocabulary_exercises(category_key: str) -> list[dict]:
+def _mcq_for_word(word: str, all_words: list[str], rng) -> dict:
+    sign = SUPPORTED_SIGNS[word]
+    others = [w for w in all_words if w != word]
+    distractors = rng.sample(others, k=min(3, len(others)))
+    return {
+        "type": "vocab_comprehension_mcq",
+        "prompt": "What does this sign mean?",
+        "video": _video_dict(sign),
+        "options": sorted([word, *distractors], key=lambda _: rng.random()),
+        "correct_option": word,
+    }
+
+
+def generate_vocabulary_exercises(category_key: str, mastery_by_word: dict[str, str] | None = None) -> list[dict]:
     """
-    Deterministic exercise set for a vocabulary lesson:
-      1. one vocab_video_card per word (real video + description + attribution)
-      2. one vocab_comprehension_mcq per word ("what does this sign mean?")
-      3. one vocab_mirror_practice covering the whole category (ungraded
-         camera self-practice — see module docstring for why this isn't
-         recognition-graded like the alphabet track's camera_challenge)
+    Per-word exercise sequence implementing the Learn -> Recognize ->
+    Produce -> Recall loop, branched by each word's current mastery state
+    (`mastery_by_word`: word -> "new"|"learning"|"practicing"|"mastered",
+    from UserSignMastery; a word with no entry is treated as "new"):
+
+      new / learning -> Learn (vocab_video_card) -> Recognize
+                         (vocab_comprehension_mcq) -> Produce
+                         (vocab_produce_selfcheck)
+      practicing     -> Recall only (vocab_recall_selfcheck) — no demo shown
+                         first, since Recall specifically tests memory, not
+                         imitation
+      mastered       -> skipped (nothing left to teach); if EVERY word in
+                         the category is already mastered, falls back to a
+                         full Recall pass over all of them instead of
+                         returning an empty/broken lesson
+
+    Produce and Recall are ALWAYS self-checked, never model-graded — see
+    this module's docstring for why (the trained recognition model can't
+    validate dynamic word-level signs).
     """
     import random
 
@@ -226,10 +255,30 @@ def generate_vocabulary_exercises(category_key: str) -> list[dict]:
     words = category["words"]
     all_words = [w for cat in VOCABULARY_CATEGORIES for w in cat["words"]]
     rng = random.Random(f"signbridge-vocab-{category_key}")
+    mastery_by_word = mastery_by_word or {}
+
+    def state_of(word: str) -> str:
+        return mastery_by_word.get(word, "new")
 
     exercises: list[dict] = []
     for word in words:
+        state = state_of(word)
         sign = SUPPORTED_SIGNS[word]
+
+        if state == "mastered":
+            continue
+
+        if state == "practicing":
+            exercises.append(
+                {
+                    "type": "vocab_recall_selfcheck",
+                    "word": word,
+                    "prompt": f'From memory — show the sign for "{word}" (no demo shown, this tests recall).',
+                }
+            )
+            continue
+
+        # new / learning: full Learn -> Recognize -> Produce
         exercises.append(
             {
                 "type": "vocab_video_card",
@@ -239,21 +288,25 @@ def generate_vocabulary_exercises(category_key: str) -> list[dict]:
                 "source_channel": sign.source_channel,
             }
         )
-
-    for word in words:
-        sign = SUPPORTED_SIGNS[word]
-        others = [w for w in all_words if w != word]
-        distractors = rng.sample(others, k=min(3, len(others)))
+        exercises.append(_mcq_for_word(word, all_words, rng))
         exercises.append(
             {
-                "type": "vocab_comprehension_mcq",
-                "prompt": "What does this sign mean?",
-                "video": _video_dict(sign),
-                "options": sorted([word, *distractors], key=lambda _: rng.random()),
-                "correct_option": word,
+                "type": "vocab_produce_selfcheck",
+                "word": word,
+                "prompt": f'Your turn — show the sign for "{word}".',
             }
         )
 
-    exercises.append({"type": "vocab_mirror_practice", "words": words})
+    if not exercises:
+        # Every word already mastered: still give a lesson (a full Recall
+        # review) rather than returning nothing.
+        for word in words:
+            exercises.append(
+                {
+                    "type": "vocab_recall_selfcheck",
+                    "word": word,
+                    "prompt": f'Review — from memory, show the sign for "{word}".',
+                }
+            )
 
     return exercises

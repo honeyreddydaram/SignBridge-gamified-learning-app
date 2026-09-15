@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models.gamification import Achievement, UserAchievement, XPTransaction
 from app.models.lesson import Lesson, LessonStatus, LessonType, UserLessonProgress
+from app.models.mastery import MasteryState, UserQuestProgress, UserSignMastery
 from app.models.user import User
 
 settings = get_settings()
@@ -89,6 +90,9 @@ ACHIEVEMENT_DEFS = [
     ("perfect_lesson", "Perfectionist", "Complete a lesson with a perfect score.", "\U0001F31F"),
     ("camera_pro", "Camera Pro", "Get 25 correct camera recognition challenges.", "\U0001F4F7"),
     ("vocabulary_complete", "Vocabulary Builder", "Complete every vocabulary category.", "\U0001F4DA"),
+    ("first_sign_mastered", "First Mastery", "Master your first ASL sign.", "\U0001F3C5"),
+    ("mastery_10", "Sign Master", "Master 10 ASL signs.", "\U0001F9E0"),
+    ("quest_starter", "Quest Starter", "Complete your first Sign Quest.", "\U0001F5FA"),
 ]
 
 
@@ -137,6 +141,16 @@ def check_and_grant_achievements(db: Session, user: User) -> list[str]:
         .count()
     )
     total_vocabulary_lessons = db.query(Lesson).filter(Lesson.lesson_type == LessonType.VOCABULARY).count()
+    mastered_count = (
+        db.query(UserSignMastery)
+        .filter(UserSignMastery.user_id == user.id, UserSignMastery.state == MasteryState.MASTERED)
+        .count()
+    )
+    completed_quests = (
+        db.query(UserQuestProgress)
+        .filter(UserQuestProgress.user_id == user.id, UserQuestProgress.status == "completed")
+        .count()
+    )
 
     to_check = []
     if completed_lessons >= 1:
@@ -151,6 +165,12 @@ def check_and_grant_achievements(db: Session, user: User) -> list[str]:
         to_check.append("streak_7")
     if perfect_lessons >= 1:
         to_check.append("perfect_lesson")
+    if mastered_count >= 1:
+        to_check.append("first_sign_mastered")
+    if mastered_count >= 10:
+        to_check.append("mastery_10")
+    if completed_quests >= 1:
+        to_check.append("quest_starter")
 
     for code in to_check:
         if code in existing_codes:

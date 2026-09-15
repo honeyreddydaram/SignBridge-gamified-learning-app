@@ -44,3 +44,9 @@ class User(Base):
     practice_attempts: Mapped[list["PracticeAttempt"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    sign_mastery: Mapped[list["UserSignMastery"]] = relationship(  # noqa: F821
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    quest_progress: Mapped[list["UserQuestProgress"]] = relationship(  # noqa: F821
+        back_populates="user", cascade="all, delete-orphan"
+    )
