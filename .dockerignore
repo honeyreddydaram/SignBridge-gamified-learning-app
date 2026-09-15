@@ -1,0 +1,17 @@
+.git/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/node_modules/
+**/dist/
+**/.vite/
+backend/*.db
+backend/.env
+frontend/.env
+ml/data/
+ml/mlruns/
+ml/.cache/
+docs/demos/
+*.mp4
+*.md

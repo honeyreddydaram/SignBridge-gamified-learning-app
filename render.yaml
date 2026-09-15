@@ -1,0 +1,48 @@
+# Render Blueprint — deploys the full live app (backend + frontend) from
+# this repo in one step: on render.com, "New" -> "Blueprint" -> select this
+# repo. See README.md "Live demo" for the two manual env-var steps required
+# after the first deploy (Render doesn't know each service's URL until it
+# exists, so they can't be wired up automatically here).
+#
+# NOT build-tested against a real Render account (no account access in the
+# environment this was written in) -- reviewed carefully against Render's
+# documented Blueprint spec, but verify the first deploy against this file.
+
+services:
+  - type: web
+    name: signbridge-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: RECOGNITION_CONFIDENCE_THRESHOLD
+        value: "0.75"
+      # SQLite on Render's free tier has no persistent disk: this file
+      # resets on every deploy/restart. Fine for a demo (the seed data
+      # reloads every time); not durable storage. See README.md.
+      - key: DATABASE_URL
+        value: sqlite:///./signbridge.db
+      # Placeholder -- replace with the frontend service's real URL
+      # (https://signbridge-frontend.onrender.com or whatever it's actually
+      # named) once it exists, then save to trigger a redeploy.
+      - key: FRONTEND_ORIGIN
+        value: https://signbridge-frontend.onrender.com
+
+  - type: web
+    name: signbridge-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      # Placeholder -- replace with the backend service's real URL once it
+      # exists, then save to trigger a redeploy.
+      - key: BACKEND_URL
+        value: https://signbridge-backend.onrender.com

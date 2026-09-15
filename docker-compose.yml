@@ -7,11 +7,13 @@
 #   docker compose up --build
 # Then open http://localhost:8080
 #
-# Requires ml/models/{asl_landmark_classifier.joblib,hand_landmarker.task,
-# reference_landmarks.json} to already exist on the host (run the ml/
-# training pipeline first — see ml/README.md). They're mounted read-only
-# into the backend container rather than baked into the image, since they're
-# generated artifacts, not source.
+# The backend image is built with the repo root as context (see
+# backend/Dockerfile) and bakes in ml/models/{asl_landmark_classifier.joblib,
+# reference_landmarks.json} (committed, real trained artifacts) plus
+# hand_landmarker.task (downloaded at build time). The volume mount below
+# still points at the same in-container path, so if you've retrained the
+# model locally, your host copy transparently overrides the baked-in one —
+# no rebuild needed to pick up a new model.
 
 services:
   db:
@@ -29,7 +31,9 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -37,10 +41,8 @@ services:
       DATABASE_URL: postgresql+psycopg2://signbridge:signbridge@db:5432/signbridge
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-prod}
       FRONTEND_ORIGIN: http://localhost:8080
-      RECOGNITION_MODEL_PATH: /ml/models/asl_landmark_classifier.joblib
-      HAND_LANDMARKER_TASK_PATH: /ml/models/hand_landmarker.task
     volumes:
-      - ./ml/models:/ml/models:ro
+      - ./ml/models:/app/ml/models:ro
     ports:
       - "8000:8000"
 
@@ -48,6 +50,9 @@ services:
     build: ./frontend
     depends_on:
       - backend
+    environment:
+      PORT: 80
+      BACKEND_URL: http://backend:8000
     ports:
       - "8080:80"
 
