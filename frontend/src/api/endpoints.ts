@@ -7,6 +7,7 @@ import type {
   LessonExercisesResponse,
   ReferenceLandmarks,
   RecognitionResult,
+  SupportedSignEntry,
   UserProfile,
 } from '../types'
 
@@ -45,5 +46,6 @@ export const recognitionApi = {
 
 export const interpretationApi = {
   interpret: (text: string) => apiClient.post<InterpretResponse>('/interpretation/interpret', { text }),
-  supportedSigns: () => apiClient.get<{ count: number; words: string[] }>('/interpretation/supported-signs'),
+  supportedSigns: () =>
+    apiClient.get<{ count: number; words: SupportedSignEntry[] }>('/interpretation/supported-signs'),
 }

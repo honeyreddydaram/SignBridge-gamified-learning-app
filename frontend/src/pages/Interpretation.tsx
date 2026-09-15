@@ -26,15 +26,15 @@ export function Interpretation() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-1 text-2xl font-bold text-brand-800">Text → ASL</h1>
       <p className="mb-6 text-sm text-gray-600">
-        Type English text to see it fingerspelled letter-by-letter, or as a recognized whole-word ASL sign
-        where one is supported.
+        Type English text to see it fingerspelled letter-by-letter, or as a real video of a supported
+        whole-word ASL sign where one exists.
       </p>
 
       <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. hello friend"
+          placeholder="e.g. hello, thank you"
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none"
         />
         <button
@@ -70,7 +70,33 @@ export function Interpretation() {
                     )}
                   </div>
 
-                  {seg.kind === 'sign' && <p className="text-sm text-gray-600">{seg.description}</p>}
+                  {seg.kind === 'sign' && seg.video && (
+                    <div className="flex flex-col gap-2">
+                      <div className="aspect-video w-full max-w-sm overflow-hidden rounded-lg bg-black">
+                        <iframe
+                          key={seg.video.video_id}
+                          src={`${seg.video.embed_url}?rel=0`}
+                          title={seg.video.source_title}
+                          className="h-full w-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600">{seg.description}</p>
+                      <p className="text-xs text-gray-400">
+                        Video:{' '}
+                        <a
+                          href={seg.video.watch_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline hover:text-gray-600"
+                        >
+                          {seg.video.source_title}
+                        </a>{' '}
+                        — {seg.video.source_channel} (via YouTube)
+                      </p>
+                    </div>
+                  )}
 
                   {seg.kind === 'fingerspell' && seg.letters && (
                     <div className="flex flex-wrap gap-3">

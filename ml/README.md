@@ -35,3 +35,7 @@ Everything under `data/`, and the two large `models/*` artifacts, is gitignored 
 
 - `landmark_utils.py` — the ONE normalization function (wrist-origin + scale invariant), imported by both this pipeline and the backend's inference service. See `ARCHITECTURE.md` at the repo root for why that matters.
 - `train.py` — has the full methodology writeup in its module docstring (leakage-safe splitting, why cross-validation is used instead of a single validation split, per-photo capping). Worth reading before treating the numbers as self-explanatory.
+
+## Word-level sign video vocabulary
+
+`word_signs_verified.json` (114 words) and `word_signs_research_report.md` (full sourcing methodology and honesty notes) are a separate data source from the alphabet model above — they back the Interpretation module's whole-word signs (backend/app/asl_signs.py), each a real, individually oEmbed-verified YouTube video of an actual signer from a reputable ASL-education channel. Read the research report before extending this list; it documents exactly which channels were used and why Lifeprint/ASL University was excluded (they explicitly prohibit embedding).

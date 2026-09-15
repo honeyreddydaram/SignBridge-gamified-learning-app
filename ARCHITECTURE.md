@@ -72,6 +72,12 @@ Lesson content (26 hand-authored handshape descriptions) and exercise generation
 
 The training dataset's license doesn't permit redistributing its images, so sign cards and the fingerspelling animation in the Interpretation module can't use dataset photos, and hand-drawing 26 illustrations was out of scope. Instead, `ml/scripts/train.py::compute_reference_landmarks` picks a representative real photo per letter (closest to that letter's feature centroid) and stores its **landmark coordinates** (not the image) in `reference_landmarks.json`. The frontend renders these as an SVG hand-skeleton using MediaPipe's standard 21-point connection topology — real, derived-from-data visuals with no licensing issue and no fabrication.
 
+## Word-level sign video (backend/app/asl_signs.py)
+
+The Interpretation module's whole-word signs (HELLO, THANK YOU, etc.) show a real embedded video of an actual signer, not a diagram or a description alone. This required a real, non-fabricatable data source: `ml/word_signs_verified.json` holds 114 entries, each individually verified by calling YouTube's oEmbed endpoint and confirming a real, embeddable video exists and matches the word — see `ml/word_signs_research_report.md` for the full sourcing methodology, including why Lifeprint/ASL University was excluded (their site explicitly prohibits embedding their material) in favor of YouTube's own embed mechanism against reputable ASL-education channels.
+
+`backend/app/asl_signs.py` loads this file into a `WordSign` record per word (description, video id/embed url, source channel/title). The interpretation API (`backend/app/api/interpretation.py`) only marks a word as a "supported sign" — video and all — if it has a verified entry; anything else falls back to fingerspelling, even if a text description happens to exist for it. This keeps the "Supported ASL sign" badge meaning what it says rather than being backed by a guess. `backend/tests/test_word_signs_data.py` validates the JSON file's structure (no duplicate words, all required fields present, consistent URL shape) on every test run.
+
 ## What's NOT implemented (by design, and disclosed to the user in-app)
 
 - Full grammatical ASL translation (ASL grammar, non-manual markers, classifiers) — explicitly out of scope and disclaimed in the Interpretation module's UI and API response (`is_full_grammatical_asl: false` + a visible disclaimer banner).

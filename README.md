@@ -3,7 +3,7 @@
 A full-stack ASL (American Sign Language) accessibility and learning app with three integrated modules:
 
 1. **Recognition** — real webcam ASL fingerspelling recognition (A-Z), backed by a landmark-based classifier trained on real data (see `ml/`).
-2. **Interpretation** — English text → ASL, with A-Z fingerspelling and a small set of recognized whole-word signs, clearly distinguished from each other and from full grammatical ASL translation (which this app does **not** claim to do).
+2. **Interpretation** — English text → ASL, with A-Z fingerspelling and **114 whole-word signs backed by real, individually-verified video of an actual signer** (embedded via YouTube's official embed mechanism from reputable ASL-education channels — see `ml/word_signs_research_report.md`), clearly distinguished from fingerspelling and from full grammatical ASL translation (which this app does **not** claim to do).
 3. **Learn** — a gamified A-Z curriculum (lesson path, XP, streaks, hearts, achievements, quizzes, and camera-based "show the sign" challenges) that reuses the **same** recognition model as module 1.
 
 See `ml/MODEL_CARD.md` for the actual, honestly-measured accuracy of the trained model (not invented), `ml/DATA_CARD.md` for dataset provenance, and `ARCHITECTURE.md` for how the pieces fit together.
@@ -104,10 +104,16 @@ docker compose up --build
 
 Opens the app at `http://localhost:8080` with Postgres instead of SQLite. **This was written but could not be build-tested** in the environment this repo was created in, because Docker Desktop's engine wasn't running there (only the CLI was available). Review the Dockerfiles before relying on this path.
 
+## Interpretation module's word-sign vocabulary
+
+`ml/word_signs_verified.json` holds 114 words, each with a real YouTube video of an actual signer performing that sign. Every entry was individually verified via YouTube's oEmbed endpoint (not guessed) — full sourcing rationale, per-channel breakdown, and the list of words considered but left out (rather than padded with a lower-confidence guess) is in `ml/word_signs_research_report.md`. Lifeprint/ASL University was deliberately excluded: their site explicitly prohibits embedding their material, so their videos are not used anywhere in this app.
+
+A word only gets the "Supported ASL sign" badge + video if it has a verified entry — everything else, including words we might have a text description for, falls back to fingerspelling. `backend/tests/test_word_signs_data.py` validates the data file's structure on every test run (no live network calls in CI; the actual video links were verified manually — see the research report).
+
 ## Known limitations (see also ml/MODEL_CARD.md)
 
 - **Recognition accuracy is measured, not assumed**: 85.7% on a held-out test set of 77 images from the *same* source dataset (95% CI: 76.2%-91.8%). Real-world webcam accuracy on a different camera/lighting/hand has not been measured and is likely lower — treat live recognition as a genuine, working demonstration, not a validated production recognizer.
-- Interpretation module's whole-word sign dictionary is a small (30-word), hand-curated reference set, not a certified ASL dictionary, and does not produce grammatical ASL (see the in-app disclaimer, sourced from `backend/app/api/interpretation.py`).
+- Interpretation module's whole-word sign dictionary (114 words, real verified video) is not a certified/exhaustive ASL dictionary, and does not produce grammatical ASL (see the in-app disclaimer, sourced from `backend/app/api/interpretation.py`). A few source videos are compilations reused across several related words (e.g. one "Colors" video backs all 10 color entries) — noted per-entry in `ml/word_signs_verified.json`'s `notes` field, and flagged as a maintenance risk (single point of failure if a compilation video is taken down) in `ml/word_signs_research_report.md`.
 - Sign cards / fingerspelling visuals are SVG hand-skeletons rendered from real per-letter landmark data computed by the training pipeline (`ml/models/reference_landmarks.json`) — not stock photos or hand-drawn art, because the training dataset's license doesn't permit redistributing its images.
 - Docker Compose is untested end-to-end (see above).
 - UI was verified via the built production bundle, TypeScript compilation, and direct HTTP testing of every endpoint the frontend calls (through the same dev-server proxy path the browser uses) — not via an interactive browser session, since no browser automation tool was available in the development environment. See the final report in the conversation for exactly what was and wasn't exercised.

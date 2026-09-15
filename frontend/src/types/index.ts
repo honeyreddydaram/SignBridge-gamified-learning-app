@@ -99,11 +99,27 @@ export type ReferenceLandmarks = Record<string, ReferenceLandmark>
 
 export type InterpretSegmentKind = 'sign' | 'fingerspell' | 'space'
 
+export interface SignVideo {
+  provider: string
+  video_id: string
+  watch_url: string
+  embed_url: string
+  source_title: string
+  source_channel: string
+}
+
 export interface InterpretSegment {
   kind: InterpretSegmentKind
   word: string
   description?: string | null
+  video?: SignVideo | null
   letters?: string[] | null
+}
+
+export interface SupportedSignEntry {
+  word: string
+  description: string
+  source_channel: string
 }
 
 export interface InterpretResponse {
