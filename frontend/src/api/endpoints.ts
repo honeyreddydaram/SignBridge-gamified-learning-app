@@ -15,6 +15,10 @@ import type {
   UserProfile,
 } from '../types'
 
+export const healthApi = {
+  check: (timeoutMs: number) => apiClient.get<{ status: string }>('/health', { timeout: timeoutMs }),
+}
+
 export const authApi = {
   signup: (email: string, username: string, password: string) =>
     apiClient.post<{ access_token: string }>('/auth/signup', { email, username, password }),
