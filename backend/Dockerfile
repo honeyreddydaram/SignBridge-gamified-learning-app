@@ -8,9 +8,13 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# libgl1/libglib needed by opencv-python-headless + mediapipe at runtime
+# Needed by opencv-python-headless + mediapipe at runtime, even headless:
+# mediapipe's Python wheel links against EGL/GLES regardless of whether a
+# GPU delegate is actually used (CPU-only inference still hits this at
+# import time) -- libgl1/libglib2.0-0 alone aren't enough, confirmed by the
+# real "libEGL.so.1: cannot open shared object file" failure on first deploy.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libglib2.0-0 \
+    libgl1 libglib2.0-0 libegl1 libgles2 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.lock.txt backend/requirements.lock.txt
