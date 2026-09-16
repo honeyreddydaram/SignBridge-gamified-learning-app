@@ -8,7 +8,9 @@ Most "ASL apps" are either a static dictionary (look up a word, see a picture) o
 
 ## Live demo
 
-*(Coming soon — see [Deploying](#deploying) below. Once it's up, the link goes here.)*
+**[signbridge-frontend-mpn3.onrender.com](https://signbridge-frontend-mpn3.onrender.com)** — sign up and try Recognition, Interpretation, and Learning for real.
+
+Hosted on Render's free tier (see [Deploying](#deploying)): the service **spins down after 15 minutes idle**, so the first load after a while may take 30–50s to wake up. Signups/progress also **reset on redeploy or restart** (no persistent disk on this tier) — expected behavior for a demo, not a bug.
 
 ## Demo — See SignBridge in Action
 
